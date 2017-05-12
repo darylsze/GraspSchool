@@ -1,5 +1,4 @@
 import org.jsoup.Jsoup
-import java.util.*
 import java.util.concurrent.TimeUnit
 
 /**
@@ -8,12 +7,19 @@ import java.util.concurrent.TimeUnit
 fun main(args: Array<String>) {
 
     (1..18).forEach { districtId ->
-        doADistrict(districtId)
+        /**
+         * get one district each time.
+         */
+        doOneDistrict(districtId)
+
+        /**
+         * add 1 second delay to prevent 403
+         */
         TimeUnit.SECONDS.sleep(1)
     }
 }
 
-fun doADistrict(districtId: Int) {
+fun doOneDistrict(districtId: Int) {
     val totalPage = getTotalPage(districtId = districtId)
 
     (1..totalPage).forEach { page ->
@@ -21,7 +27,12 @@ fun doADistrict(districtId: Int) {
         val links = doc.select("#main_content > table > tbody > tr:nth-child(6) > td > table > tbody > tr > td:nth-child(2) > a").map { it.absUrl("href") }
 
         links.forEach { link ->
+
             getASchool(link)
+
+            /**
+             * add 1 second delay to prevent 403
+             */
             TimeUnit.SECONDS.sleep(1)
         }
 
@@ -32,7 +43,9 @@ fun doADistrict(districtId: Int) {
     }
 }
 
-
+/**
+ * Use Jsoup's selector to grasp school info
+ */
 fun getASchool(link: String) {
     val doc = Jsoup.connect(link).get()
 
@@ -48,6 +61,10 @@ fun getASchool(link: String) {
     println("$address | $email | $name | $englishName | $tel | $fax | $website | $principal")
 }
 
+/**
+ * get total page for [districtId]
+ * return total number of pages
+ */
 fun getTotalPage(districtId: Int): Int {
     val doc = Jsoup
             .connect("http://applications.chsc.hk/ssp2016/m/sch_list.php?lang_id=2&frmMode=pagebreak&district_id=$districtId")
@@ -59,6 +76,7 @@ fun getTotalPage(districtId: Int): Int {
         println("!!! Regex().find($numStr)?.groups?.get(1)?.value is null!!!")
         return 1
     }
+
     val num: Int = Regex("(\\d+)").find(numStr)?.groups?.get(1)?.value!!.toInt()
 
     val page: Int = Math.round(num / 20.toFloat())
